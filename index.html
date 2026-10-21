@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kinder Beers</title>
+<meta name="description" content="Berlin pubs that welcome parents and prams. Open in the daytime, smoke-free where you sit.">
+<meta property="og:title" content="Kinder Beers">
+<meta property="og:description" content="Berlin pubs that welcome parents and prams. Open in the daytime, smoke-free where you sit.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1c3d6e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c3d6e'/%3E%3Cpath d='M16 27C11 20 7 17 7 12.5a9 9 0 0 1 18 0C25 17 21 20 16 27Z' fill='%23e8a012'/%3E%3Ccircle cx='16' cy='12.5' r='3.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root {
+  /* Layout: street-sign wordmark, filter chips, neighbourhood row, one real map with a place sheet on it, card list beside or below */
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --ink: #14233a;
+  --ink-soft: #52627a;
+  --line: #ccd4df;
+  --plate: #1c3d6e;
+  --plate-ink: #ffffff;
+  --pin: #e8a012;
+  --pin-stroke: #14233a;
+  --amber-ink: #2b1c00;
+  --sel: #e4ecf8;
+  --good: #1c7348;
+  --warn: #8a5700;
+  --warn-bg: #fbebc7;
+  --focus: var(--plate);
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+:root[data-palette="hopfen"] { --plate: #1f5a43; --pin: #e8623a; --sel: #e0efe7; }
+:root[data-palette="schuss"] { --plate: #7d1f45; --pin: #6fae2f; --sel: #f6e3ea; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1726; --surface: #15243a; --ink: #e7eef8; --ink-soft: #9fb0c7; --line: #2a3c55;
+    --plate: #2b5aa0; --pin: #f2b032; --pin-stroke: #0d1726; --sel: #1b3555;
+    --good: #6fd6a0; --warn: #f0c56a; --warn-bg: #3a2d10; --focus: #9dc0ff;
+    color-scheme: dark;
+  }
+  :root[data-palette="hopfen"] { --plate: #2f7d5c; --pin: #f07a52; --sel: #1b3a2e; }
+  :root[data-palette="schuss"] { --plate: #a1325f; --pin: #8cc84b; --sel: #3a1a29; }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  padding-block: max(14px, env(safe-area-inset-top, 0px)) max(48px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+.notice {
+  margin: 0; padding: 8px 12px; border-radius: 8px;
+  background: var(--warn-bg); color: var(--warn);
+  font-size: 13px; font-weight: 600;
+}
+
+.head { display: flex; flex-direction: column; gap: 6px; }
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plate {
+  margin: 0; display: inline-flex; padding: 5px;
+  background: var(--plate); color: var(--plate-ink); border-radius: 12px;
+}
+.plate-in {
+  display: block; border: 2px solid var(--plate-ink); border-radius: 8px;
+  padding: 3px 14px 0; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(28px, 8vw, 54px); line-height: 1.05; letter-spacing: 0.05em;
+}
+.lang {
+  min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  background: var(--surface); border: 1.5px solid var(--line);
+  font-weight: 700; font-size: 14px; letter-spacing: 0.04em; cursor: pointer;
+}
+.tagline { margin: 6px 0 0; font-size: 18px; font-weight: 700; text-wrap: balance; max-width: 34em; }
+.rule { margin: 0; color: var(--ink-soft); font-size: 15px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  min-height: 40px; padding: 0 14px; border-radius: 999px;
+  background: var(--surface); border: 1.5px solid var(--line);
+  font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--plate); border-color: var(--plate); color: var(--plate-ink); }
+.status { margin: -4px 0 0; font-size: 13px; color: var(--ink-soft); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.mapcol, .sidecol { min-width: 0; }
+
+.areas { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 10px; scrollbar-width: none; }
+.areas::-webkit-scrollbar { display: none; }
+.area {
+  flex: none; min-height: 34px; padding: 0 12px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-soft);
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.area[aria-pressed="true"] { border-color: var(--plate); color: var(--ink); background: var(--sel); }
+
+.mapbox { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); isolation: isolate; }
+#map { width: 100%; aspect-ratio: 1 / 1; max-height: 72vh; min-height: 300px; background: var(--surface); font-family: var(--font-body); }
+.leaflet-tile-pane { filter: saturate(0.6) contrast(0.96); }
+@media (prefers-color-scheme: dark) {
+  .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(0.5) brightness(0.9) contrast(0.9); }
+}
+.leaflet-bar a, .leaflet-bar a:hover { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.leaflet-control-attribution { font-size: 11px; }
+
+.kb-pin { display: flex; align-items: flex-end; justify-content: center; }
+.kb-pin svg { filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)); transition: transform 0.15s; transform-origin: 50% 100%; }
+.kb-pin .b { fill: var(--pin); stroke: var(--pin-stroke); stroke-width: 2; stroke-linejoin: round; }
+.kb-pin .d { fill: var(--surface); }
+.kb-pin.sel svg { transform: scale(1.2); }
+.kb-pin.sel .b { fill: var(--plate); stroke: var(--pin); }
+.kb-pin.sel .d { fill: var(--pin); }
+.kb-pin:focus-visible { outline: 3px solid var(--focus); outline-offset: -4px; border-radius: 8px; }
+.me { fill: #2f6fe0; stroke: #ffffff; stroke-width: 3; }
+
+.sheet {
+  position: absolute; left: 10px; right: 10px; bottom: 30px; z-index: 1100;
+  padding: 12px 44px 12px 14px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  box-shadow: 0 6px 22px rgba(10, 20, 40, 0.22);
+}
+.sheet .x {
+  position: absolute; top: 6px; right: 6px; width: 36px; height: 36px; border-radius: 8px;
+  background: transparent; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-soft);
+}
+.s-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.s-top h2 { margin: 0; font-size: 18px; font-weight: 800; text-wrap: balance; }
+.badge {
+  padding: 2px 8px; border-radius: 6px; background: var(--pin); color: var(--amber-ink);
+  font-size: 11px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.s-meta { margin: 2px 0 0; color: var(--ink-soft); font-size: 14px; }
+.s-hours { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); }
+.s-note { margin: 8px 0 0; font-size: 14px; }
+.s-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 10px; }
+.s-ver { font-size: 12px; color: var(--ink-soft); }
+.go {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 10px;
+  background: var(--plate); color: var(--plate-ink); font-weight: 700; font-size: 14px; text-decoration: none;
+}
+
+.st { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.st::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: currentColor; }
+.st.open { color: var(--good); }
+
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill {
+  padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line);
+  font-size: 12px; font-weight: 600; color: var(--ink-soft); white-space: nowrap;
+}
+.pill.good { border-color: var(--good); color: var(--good); }
+.pill.warn { border-color: var(--warn); background: var(--warn-bg); color: var(--warn); }
+
+.listhead { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 10px; }
+.listhead h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: 0.06em; text-transform: uppercase; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.card {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--surface); border: 1.5px solid var(--line);
+}
+.card.sel { border-color: var(--plate); background: var(--sel); }
+.c-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.c-name { font-weight: 700; font-size: 16px; min-width: 0; overflow-wrap: anywhere; }
+.c-dist { font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+.c-area { display: block; font-size: 13px; color: var(--ink-soft); }
+.c-st { display: block; margin-top: 2px; }
+.empty { grid-column: 1 / -1; padding: 18px; border: 1.5px dashed var(--line); border-radius: 12px; text-align: center; }
+.empty p { margin: 0 0 10px; }
+.btn {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 10px; cursor: pointer;
+  background: var(--plate); color: var(--plate-ink); border: 0; font-weight: 700; font-size: 15px; text-decoration: none;
+}
+
+.suggest {
+  margin-top: 20px; padding: 16px; border: 1.5px dashed var(--line); border-radius: 14px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.suggest p { margin: 0; }
+.suggest .s-title { font-weight: 700; }
+.suggest .s-note2 { flex-basis: 100%; font-size: 13px; color: var(--ink-soft); }
+
+.foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-size: 13px; color: var(--ink-soft); }
+.linkbtn { background: none; border: 0; padding: 6px 0; font-size: 13px; color: var(--ink-soft); text-decoration: underline; cursor: pointer; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px 0 8px; border-radius: 999px;
+  background: var(--surface); border: 1.5px solid var(--line); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.sw[aria-pressed="true"] { border-color: var(--ink); }
+.sw i { width: 22px; height: 22px; border-radius: 50%; display: block; border: 1px solid rgba(0, 0, 0, 0.15); }
+
+@media (max-width: 599px) {
+  .sheet .pills, .sheet .s-note, .sheet .s-hours, .sheet .s-ver { display: none; }
+  .sheet { padding-block: 10px; }
+}
+@media (min-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; }
+  .mapcol { position: sticky; top: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .kb-pin svg { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="notice" id="notice" data-i18n="notice" hidden></p>
+
+  <header class="head">
+    <div class="head-row">
+      <h1 class="plate"><span class="plate-in">Kinder Beers</span></h1>
+      <button type="button" id="lang" class="lang">DE</button>
+    </div>
+    <p class="tagline" data-i18n="tagline"></p>
+    <p class="rule" data-i18n="rule"></p>
+  </header>
+
+  <div class="filters" id="filters" role="group" data-i18n-aria="filters">
+    <button type="button" class="chip" id="near" aria-pressed="false" data-i18n="near"></button>
+    <button type="button" class="chip" data-f="open" aria-pressed="false" data-i18n="f_open"></button>
+    <button type="button" class="chip" data-f="smoke" aria-pressed="false" data-i18n="f_smoke"></button>
+    <button type="button" class="chip" data-f="outdoor" aria-pressed="false" data-i18n="f_outdoor"></button>
+    <button type="button" class="chip" data-f="pram" aria-pressed="false" data-i18n="f_pram"></button>
+    <button type="button" class="chip" data-f="change" aria-pressed="false" data-i18n="f_change"></button>
+  </div>
+  <p class="status" id="status" aria-live="polite" hidden></p>
+
+  <div class="layout">
+    <section class="mapcol">
+      <div class="areas" id="areas" role="group" data-i18n-aria="areas"></div>
+      <div class="mapbox">
+        <div id="map" data-i18n-aria="map_label"></div>
+        <div class="sheet" id="sheet" aria-live="polite" hidden></div>
+      </div>
+    </section>
+
+    <section class="sidecol">
+      <div class="listhead"><h2 id="count"></h2></div>
+      <ul class="list" id="list"></ul>
+      <div class="suggest">
+        <p class="s-title" data-i18n="sug_title"></p>
+        <a class="btn" id="suggestLink" href="#" target="_blank" rel="noopener" hidden data-i18n="sug_btn"></a>
+        <button type="button" class="btn" id="suggest" hidden data-i18n="sug_btn"></button>
+        <p class="s-note2" id="sugNote" aria-live="polite" hidden data-i18n="sug_note"></p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <button type="button" class="linkbtn" id="palToggle" aria-expanded="false" data-i18n="try_colours"></button>
+    <div class="swatches" id="swatches" hidden>
+      <button type="button" class="sw" data-pal="sign" aria-pressed="true"><i style="background:linear-gradient(135deg,#1c3d6e 50%,#e8a012 50%)"></i>Sign</button>
+      <button type="button" class="sw" data-pal="hopfen" aria-pressed="false"><i style="background:linear-gradient(135deg,#1f5a43 50%,#e8623a 50%)"></i>Hopfen</button>
+      <button type="button" class="sw" data-pal="schuss" aria-pressed="false"><i style="background:linear-gradient(135deg,#7d1f45 50%,#6fae2f 50%)"></i>Schuss</button>
+    </div>
+  </footer>
+  <noscript><p class="notice">Kinder Beers needs JavaScript to show the map.</p></noscript>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ===== Settings you can change ===== */
+  var CONFIG = {
+    // Google Sheet > File > Share > Publish to web > CSV. Paste that link here to go live.
+    SHEET_CSV_URL: '',
+    // Link to your Google Form for suggestions. Leave empty to show a placeholder note.
+    SUGGEST_URL: '',
+    TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    TILE_ATTR: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    CENTER: [52.502, 13.42],
+    ZOOM: 12
+  };
+
+  /* ===== Text ===== */
+  var I18N = {
+    en: {
+      notice: 'Preview with placeholder data. Every place here is made up.',
+      tagline: 'Berlin pubs that welcome parents and prams.',
+      rule: 'Open in the daytime. Smoke-free where you sit.',
+      filters: 'Filters', areas: 'Neighbourhoods', map_label: 'Map of places',
+      near: 'Near me', near_busy: 'Finding your location…',
+      near_fail: 'Could not get your location. Check that location access is allowed for this site.',
+      f_open: 'Open now', f_smoke: 'Fully smoke-free', f_outdoor: 'Outdoor seating', f_pram: 'Pram space', f_change: 'Changing table',
+      all_berlin: 'All Berlin',
+      smoke_free: 'Smoke-free', smoke_sep: 'Smoking room is separate', smoke_unk: 'Smoking not confirmed',
+      p_outdoor: 'Outdoor seating', p_pram: 'Pram space', p_change: 'Changing table',
+      p_food: 'Serves food', p_play: 'Play corner', p_highchair: 'High chairs',
+      open_until: 'Open now · until', closed_opens: 'Closed · opens', tomorrow: 'tomorrow', no_hours: 'Hours not added yet',
+      hours: 'Hours', checked: 'Checked', not_checked: 'Not checked yet',
+      place1: 'place', placesN: 'places', badge: 'Placeholder', directions: 'Directions',
+      no_results: 'No places match these filters.', clear: 'Clear filters',
+      sug_title: 'Know a place we are missing?', sug_btn: 'Suggest a place',
+      sug_note: 'Preview only. The link to the suggestion form will go here.',
+      load_fail: 'Could not load the live list. Showing sample places instead.',
+      try_colours: 'Try colours', close: 'Close',
+      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    },
+    de: {
+      notice: 'Vorschau mit Platzhalterdaten. Alle Orte hier sind erfunden.',
+      tagline: 'Berliner Kneipen, in denen Eltern und Kinderwagen willkommen sind.',
+      rule: 'Tagsüber geöffnet. Rauchfrei, wo ihr sitzt.',
+      filters: 'Filter', areas: 'Kieze', map_label: 'Karte der Orte',
+      near: 'In meiner Nähe', near_busy: 'Standort wird gesucht…',
+      near_fail: 'Standort nicht verfügbar. Prüft, ob der Standortzugriff für diese Seite erlaubt ist.',
+      f_open: 'Jetzt geöffnet', f_smoke: 'Komplett rauchfrei', f_outdoor: 'Draußen sitzen', f_pram: 'Platz für Kinderwagen', f_change: 'Wickeltisch',
+      all_berlin: 'Ganz Berlin',
+      smoke_free: 'Rauchfrei', smoke_sep: 'Raucherraum getrennt', smoke_unk: 'Rauchen unbestätigt',
+      p_outdoor: 'Draußen sitzen', p_pram: 'Platz für Kinderwagen', p_change: 'Wickeltisch',
+      p_food: 'Essen', p_play: 'Spielecke', p_highchair: 'Hochstühle',
+      open_until: 'Jetzt geöffnet · bis', closed_opens: 'Geschlossen · öffnet', tomorrow: 'morgen', no_hours: 'Zeiten noch nicht eingetragen',
+      hours: 'Zeiten', checked: 'Geprüft', not_checked: 'Noch nicht geprüft',
+      place1: 'Ort', placesN: 'Orte', badge: 'Platzhalter', directions: 'Route',
+      no_results: 'Keine Orte passen zu diesen Filtern.', clear: 'Filter zurücksetzen',
+      sug_title: 'Kennt ihr einen Ort, der fehlt?', sug_btn: 'Ort vorschlagen',
+      sug_note: 'Nur Vorschau. Hier kommt der Link zum Formular hin.',
+      load_fail: 'Die Live-Liste konnte nicht geladen werden. Es werden Beispielorte gezeigt.',
+      try_colours: 'Farben ausprobieren', close: 'Schließen',
+      days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+    }
+  };
+
+  /* ===== Sample data (used until SHEET_CSV_URL is set). All made up. ===== */
+  var SAMPLE = [
+    { id: 'p1', name: 'Beispiel Biergarten', area: 'Neukölln', lat: 52.479, lon: 13.44, hours: 'Mo-Fr 12:00-22:00; Sa-Su 11:00-22:00', smoke: 'free', outdoor: true, pram: true, change: true, food: true, play: false, highchair: true,
+      note_en: 'Big garden with shade. High chairs by the bar.', note_de: 'Großer Garten mit Schatten. Hochstühle an der Theke.' },
+    { id: 'p2', name: 'Platzhalter Café-Bar', area: 'Neukölln', lat: 52.4915, lon: 13.429, hours: 'Mo-Su 10:00-20:00', smoke: 'free', outdoor: false, pram: true, change: false, food: false, play: false, highchair: false,
+      note_en: 'Small room, but prams are no problem.', note_de: 'Kleiner Raum, aber Kinderwagen sind kein Problem.' },
+    { id: 'p3', name: 'Test-Späti Terrasse', area: 'Neukölln', lat: 52.472, lon: 13.4245, hours: 'Mo-Su 11:00-23:00', smoke: 'free', outdoor: true, pram: false, change: false, food: false, play: false, highchair: false,
+      note_en: 'Street benches only. Good for a quick one.', note_de: 'Nur Bänke an der Straße. Gut für ein schnelles Bier.' },
+    { id: 'p4', name: 'Muster Brauhaus', area: 'Kreuzberg', lat: 52.4985, lon: 13.41, hours: 'Mo-Fr 12:00-23:00; Sa-Su 11:00-23:00', smoke: 'sep', outdoor: false, pram: true, change: true, food: true, play: false, highchair: false,
+      note_en: 'Smoking is in a back room. The main room is clear.', note_de: 'Geraucht wird nur im Hinterzimmer. Im Hauptraum nicht.' },
+    { id: 'p5', name: 'Beispiel Hofcafé', area: 'Kreuzberg', lat: 52.4925, lon: 13.39, hours: 'Tu-Su 11:00-19:00', smoke: 'free', outdoor: true, pram: true, change: true, food: false, play: true, highchair: true,
+      note_en: 'Courtyard seating, sandpit next door.', note_de: 'Sitzplätze im Hof, Sandkasten nebenan.' },
+    { id: 'p6', name: 'Platzhalter Gartenlokal', area: 'Friedrichshain', lat: 52.515, lon: 13.455, hours: 'Mo-Fr 14:00-23:00; Sa-Su 12:00-23:00', smoke: 'free', outdoor: true, pram: true, change: false, food: true, play: false, highchair: false,
+      note_en: 'Opens mid-afternoon on weekdays. Plenty of space for pushchairs.', note_de: 'Öffnet unter der Woche am Nachmittag. Viel Platz für Kinderwägen.' },
+    { id: 'p7', name: 'Example Eckkneipe', area: 'Prenzlauer Berg', lat: 52.54, lon: 13.422, hours: 'Mo-Su 13:00-24:00', smoke: 'sep', outdoor: false, pram: false, change: false, food: false, play: false, highchair: false,
+      note_en: 'Narrow room. Best on quiet weekdays.', note_de: 'Schmaler Raum. Am besten unter der Woche.' },
+    { id: 'p8', name: 'Muster Biergarten am Park', area: 'Treptow', lat: 52.4775, lon: 13.4705, hours: 'Mo-Su 12:00-22:00', smoke: 'free', outdoor: true, pram: true, change: true, food: true, play: true, highchair: false,
+      note_en: 'Right by the park. Busy on sunny weekends.', note_de: 'Direkt am Park. Voll an sonnigen Wochenenden.' },
+    { id: 'p9', name: 'Test-Taproom', area: 'Mitte', lat: 52.526, lon: 13.402, hours: 'We-Su 15:00-23:00', smoke: 'free', outdoor: false, pram: true, change: true, food: true, play: false, highchair: false,
+      note_en: 'Craft beer and lots of room. Closed Monday and Tuesday.', note_de: 'Craft-Bier und viel Platz. Montag und Dienstag geschlossen.' },
+    { id: 'p10', name: 'Beispiel Wirtshaus', area: 'Schöneberg', lat: 52.485, lon: 13.355, hours: 'Mo-Su 12:00-22:00', smoke: 'free', outdoor: true, pram: true, change: false, food: true, play: false, highchair: true,
+      note_en: 'Traditional food and a quiet garden.', note_de: 'Bürgerliche Küche und ein ruhiger Garten.' },
+    { id: 'p11', name: 'Platzhalter Bierhalle', area: 'Wedding', lat: 52.545, lon: 13.36, hours: 'Mo-Su 12:00-21:00', smoke: 'free', outdoor: true, pram: true, change: true, food: true, play: true, highchair: true,
+      note_en: 'Long tables, good for a group of families.', note_de: 'Lange Tische, gut für mehrere Familien.' }
+  ];
+
+  /* ===== Helpers ===== */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function clock(m) { if (m === 1440) return '24:00'; m = ((m % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+  function truthy(v) { return /^(yes|y|ja|j|true|1|x)$/i.test(String(v == null ? '' : v).trim()); }
+
+  /* ----- opening hours: "Mo-Fr 12:00-22:00; Sa,Su 10:00-22:00" ----- */
+  var DIDX = { mo: 0, di: 1, tu: 1, mi: 2, we: 2, do: 3, th: 3, fr: 4, sa: 5, so: 6, su: 6 };
+  function dayList(spec) {
+    var out = [];
+    spec.split(',').forEach(function (tok) {
+      tok = tok.trim().toLowerCase();
+      if (!tok) return;
+      var m = tok.split('-').map(function (s) { return DIDX[s.trim().slice(0, 2)]; });
+      if (m.length === 2 && m[0] !== undefined && m[1] !== undefined) {
+        var d = m[0];
+        for (var i = 0; i < 7; i++) { out.push(d); if (d === m[1]) break; d = (d + 1) % 7; }
+      } else if (m.length === 1 && m[0] !== undefined) out.push(m[0]);
+    });
+    return out;
+  }
+  function parseHours(str) {
+    if (!str) return null;
+    var days = [[], [], [], [], [], [], []], any = false;
+    String(str).split(';').forEach(function (seg) {
+      var m = seg.match(/^\s*([A-Za-zäöüÄÖÜ,\-\s]+?)\s*(\d{1,2})(?::(\d{2}))?\s*-\s*(\d{1,2})(?::(\d{2}))?\s*$/);
+      if (!m) return;
+      var s = +m[2] * 60 + (+m[3] || 0), e = +m[4] * 60 + (+m[5] || 0);
+      if (e <= s) e += 1440;
+      dayList(m[1]).forEach(function (d) { days[d].push([s, e]); any = true; });
+    });
+    days.forEach(function (a) { a.sort(function (x, y) { return x[0] - y[0]; }); });
+    return any ? days : null;
+  }
+  function berlinNow() {
+    var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+    var o = {};
+    parts.forEach(function (p) { o[p.type] = p.value; });
+    return { day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(o.weekday), min: parseInt(o.hour, 10) * 60 + parseInt(o.minute, 10) };
+  }
+  function openState(p) {
+    if (!p.hrs) return { k: 'none' };
+    var n = berlinNow(), today = p.hrs[n.day], yest = p.hrs[(n.day + 6) % 7], i;
+    for (i = 0; i < today.length; i++) if (n.min >= today[i][0] && n.min < today[i][1]) return { k: 'open', until: today[i][1] };
+    for (i = 0; i < yest.length; i++) if (yest[i][1] > 1440 && n.min < yest[i][1] - 1440) return { k: 'open', until: yest[i][1] - 1440 };
+    for (i = 0; i < today.length; i++) if (today[i][0] > n.min) return { k: 'closed', when: 'today', t: today[i][0] };
+    for (var d = 1; d <= 7; d++) {
+      var day = (n.day + d) % 7;
+      if (p.hrs[day].length) return { k: 'closed', when: d === 1 ? 'tomorrow' : 'day', day: day, t: p.hrs[day][0][0] };
+    }
+    return { k: 'none' };
+  }
+
+  /* ----- CSV ----- */
+  function parseCSV(text) {
+    var rows = [], row = [], cur = '', q = false, i, c;
+    for (i = 0; i < text.length; i++) {
+      c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cur); cur = ''; rows.push(row); row = [];
+      } else cur += c;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+  function rowsToPlaces(rows) {
+    if (!rows.length) return [];
+    var head = rows[0].map(function (h) { return h.trim().toLowerCase(); });
+    var hasStatus = head.indexOf('status') > -1, out = [];
+    rows.slice(1).forEach(function (r, idx) {
+      var o = {};
+      head.forEach(function (h, i) { o[h] = (r[i] || '').trim(); });
+      if (hasStatus && !/^(approved|yes|ja|live|published)$/i.test(o.status)) return;
+      var lat = parseFloat(String(o.lat).replace(',', '.')), lon = parseFloat(String(o.lon).replace(',', '.'));
+      if (!o.name || isNaN(lat) || isNaN(lon)) return;
+      var sm = /sep|getrennt|raucherraum|smoking room/i.test(o.smoke) ? 'sep' : (/free|frei|no|nein/i.test(o.smoke) ? 'free' : 'unk');
+      out.push({
+        id: o.id || ('r' + idx), name: o.name, area: o.area || '', lat: lat, lon: lon, hours: o.hours, smoke: sm,
+        outdoor: truthy(o.outdoor), pram: truthy(o.pram), change: truthy(o.changing || o.change),
+        food: truthy(o.food), play: truthy(o.play), highchair: truthy(o.highchair),
+        note_en: o.note_en || '', note_de: o.note_de || '', checked: o.checked || ''
+      });
+    });
+    return out;
+  }
+
+  /* ===== State ===== */
+  var lang = store('kb-lang') === 'de' ? 'de' : 'en';
+  var PLACES = SAMPLE.slice(), isSample = true;
+  var filters = { open: false, smoke: false, outdoor: false, pram: false, change: false };
+  var sel = null, near = false, userPos = null, area = '';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function t(k) { return I18N[lang][k]; }
+  function byId(id) { for (var i = 0; i < PLACES.length; i++) if (PLACES[i].id === id) return PLACES[i]; return null; }
+
+  /* ===== Map ===== */
+  var map = L.map('map', { attributionControl: false, zoomControl: true, minZoom: 9 }).setView(CONFIG.CENTER, CONFIG.ZOOM);
+  L.tileLayer(CONFIG.TILE_URL, { maxZoom: 19, attribution: CONFIG.TILE_ATTR }).addTo(map);
+  L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
+  var markerLayer = L.layerGroup().addTo(map);
+  var markers = {}, meMarker = null;
+  var PIN_HTML = '<svg viewBox="0 0 28 36" width="28" height="36" aria-hidden="true"><path class="b" d="M14 35C8 26 2 21 2 13.5a12 12 0 0 1 24 0C26 21 20 26 14 35Z"/><circle class="d" cx="14" cy="13.5" r="4.6"/></svg>';
+
+  function buildMarkers() {
+    markerLayer.clearLayers();
+    markers = {};
+    PLACES.forEach(function (p) {
+      var m = L.marker([p.lat, p.lon], {
+        icon: L.divIcon({ className: 'kb-pin', html: PIN_HTML, iconSize: [40, 44], iconAnchor: [20, 43] }),
+        title: p.name, alt: p.name, keyboard: true
+      });
+      m.on('click', function () { select(p.id, false); });
+      markers[p.id] = m;
+    });
+  }
+  function fitAll(list) {
+    list = list && list.length ? list : PLACES;
+    if (!list.length) return;
+    var b = L.latLngBounds(list.map(function (p) { return [p.lat, p.lon]; }));
+    map.fitBounds(b, { padding: [40, 40], maxZoom: 15, animate: !reduce });
+  }
+  function focusOn(p) {
+    var z = Math.max(map.getZoom(), 15);
+    var ll = map.unproject(map.project([p.lat, p.lon], z).add([0, 70]), z);
+    if (reduce) map.setView(ll, z, { animate: false }); else map.flyTo(ll, z, { duration: 0.6 });
+  }
+
+  /* ===== Data helpers ===== */
+  function dist(p) {
+    if (!userPos) return null;
+    var R = 6371, r = Math.PI / 180;
+    var dLat = (p.lat - userPos[0]) * r, dLon = (p.lon - userPos[1]) * r;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(userPos[0] * r) * Math.cos(p.lat * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function distText(km) {
+    if (km < 1) return Math.round(km * 100) * 10 + ' m';
+    return km.toLocaleString(lang === 'de' ? 'de-DE' : 'en-GB', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' km';
+  }
+  function visible() {
+    var v = PLACES.filter(function (p) {
+      return (!filters.open || openState(p).k === 'open') && (!filters.smoke || p.smoke === 'free') &&
+        (!filters.outdoor || p.outdoor) && (!filters.pram || p.pram) && (!filters.change || p.change);
+    });
+    if (near && userPos) v.sort(function (a, b) { return dist(a) - dist(b); });
+    return v;
+  }
+  function isVisible(id) { return visible().some(function (p) { return p.id === id; }); }
+  function statusText(p) {
+    var s = openState(p);
+    if (s.k === 'open') return { c: 'open', s: t('open_until') + ' ' + clock(s.until) };
+    if (s.k === 'closed') {
+      var w = s.when === 'today' ? '' : (s.when === 'tomorrow' ? t('tomorrow') + ' ' : t('days')[s.day] + ' ');
+      return { c: 'closed', s: t('closed_opens') + ' ' + w + clock(s.t) };
+    }
+    return { c: 'none', s: t('no_hours') };
+  }
+  function pillsFor(p, all) {
+    var h = '<span class="pill ' + (p.smoke === 'free' ? 'good' : 'warn') + '">' + t(p.smoke === 'free' ? 'smoke_free' : (p.smoke === 'sep' ? 'smoke_sep' : 'smoke_unk')) + '</span>';
+    if (p.outdoor) h += '<span class="pill">' + t('p_outdoor') + '</span>';
+    if (p.pram) h += '<span class="pill">' + t('p_pram') + '</span>';
+    if (p.change) h += '<span class="pill">' + t('p_change') + '</span>';
+    if (all) {
+      if (p.food) h += '<span class="pill">' + t('p_food') + '</span>';
+      if (p.play) h += '<span class="pill">' + t('p_play') + '</span>';
+      if (p.highchair) h += '<span class="pill">' + t('p_highchair') + '</span>';
+    }
+    return h;
+  }
+  function checkedText(p) {
+    var m = String(p.checked || '').match(/^(\d{4})-(\d{2})/);
+    if (!m) return t('not_checked');
+    var d = new Date(+m[1], +m[2] - 1, 1);
+    return t('checked') + ' ' + d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short', year: 'numeric' });
+  }
+  function dirUrl(p) {
+    var apple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return apple ? 'https://maps.apple.com/?daddr=' + p.lat + ',' + p.lon
+                 : 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon;
+  }
+
+  /* ===== Render ===== */
+  function renderMarkers() {
+    var vis = {};
+    visible().forEach(function (p) { vis[p.id] = true; });
+    PLACES.forEach(function (p) {
+      var m = markers[p.id];
+      if (!m) return;
+      if (vis[p.id]) { if (!markerLayer.hasLayer(m)) markerLayer.addLayer(m); }
+      else if (markerLayer.hasLayer(m)) markerLayer.removeLayer(m);
+      var e = m.getElement && m.getElement();
+      if (e) e.classList.toggle('sel', p.id === sel);
+      m.setZIndexOffset(p.id === sel ? 1000 : 0);
+    });
+  }
+  function renderList() {
+    var v = visible(), box = document.getElementById('list');
+    if (!v.length) {
+      box.innerHTML = '<li class="empty"><p>' + esc(t('no_results')) + '</p><button type="button" class="btn" id="clear">' + esc(t('clear')) + '</button></li>';
+      return;
+    }
+    box.innerHTML = v.map(function (p) {
+      var st = statusText(p), d = near && userPos ? distText(dist(p)) : '';
+      return '<li><button type="button" class="card' + (p.id === sel ? ' sel' : '') + '" data-id="' + esc(p.id) + '" aria-pressed="' + (p.id === sel) + '">' +
+        '<span class="c-top"><span class="c-name">' + esc(p.name) + '</span>' + (d ? '<span class="c-dist">' + esc(d) + '</span>' : '') + '</span>' +
+        '<span class="c-area">' + esc(p.area) + '</span>' +
+        '<span class="c-st"><span class="st ' + st.c + '">' + esc(st.s) + '</span></span>' +
+        '<span class="pills">' + pillsFor(p, false) + '</span></button></li>';
+    }).join('');
+  }
+  function renderSheet() {
+    var box = document.getElementById('sheet'), p = sel ? byId(sel) : null;
+    if (!p) { box.hidden = true; box.innerHTML = ''; return; }
+    var st = statusText(p), note = lang === 'de' ? (p.note_de || p.note_en) : (p.note_en || p.note_de);
+    box.hidden = false;
+    box.innerHTML =
+      '<button type="button" class="x" id="sheetClose" aria-label="' + esc(t('close')) + '">&times;</button>' +
+      '<div class="s-top"><h2>' + esc(p.name) + '</h2>' + (isSample ? '<span class="badge">' + esc(t('badge')) + '</span>' : '') + '</div>' +
+      '<p class="s-meta">' + esc(p.area) + (p.area ? ' &middot; ' : '') + '<span class="st ' + st.c + '">' + esc(st.s) + '</span></p>' +
+      (p.hours ? '<p class="s-hours">' + esc(t('hours')) + ': ' + esc(p.hours) + '</p>' : '') +
+      '<div class="pills">' + pillsFor(p, true) + '</div>' +
+      (note ? '<p class="s-note">' + esc(note) + '</p>' : '') +
+      '<div class="s-foot"><a class="go" href="' + esc(dirUrl(p)) + '" target="_blank" rel="noopener">' + esc(t('directions')) + '</a>' +
+      '<span class="s-ver">' + esc(checkedText(p)) + '</span></div>';
+  }
+  function renderCount() {
+    var n = visible().length;
+    document.getElementById('count').textContent = n + ' ' + (n === 1 ? t('place1') : t('placesN'));
+  }
+  function renderAreas() {
+    var seen = {}, names = [];
+    PLACES.forEach(function (p) { if (p.area && !seen[p.area]) { seen[p.area] = 1; names.push(p.area); } });
+    names.sort(function (a, b) { return a.localeCompare(b, 'de'); });
+    var h = '<button type="button" class="area" data-area="" aria-pressed="' + (area === '') + '">' + esc(t('all_berlin')) + '</button>';
+    names.forEach(function (n) { h += '<button type="button" class="area" data-area="' + esc(n) + '" aria-pressed="' + (area === n) + '">' + esc(n) + '</button>'; });
+    document.getElementById('areas').innerHTML = h;
+  }
+  function renderAll() { renderMarkers(); renderList(); renderSheet(); renderCount(); }
+  function setStatus(msg) {
+    var s = document.getElementById('status');
+    s.textContent = msg || '';
+    s.hidden = !msg;
+  }
+  function applyI18n() {
+    document.documentElement.lang = lang;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (n) { n.textContent = t(n.getAttribute('data-i18n')); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (n) { n.setAttribute('aria-label', t(n.getAttribute('data-i18n-aria'))); });
+    var lb = document.getElementById('lang');
+    lb.textContent = lang === 'en' ? 'DE' : 'EN';
+    lb.setAttribute('aria-label', lang === 'en' ? 'Auf Deutsch anzeigen' : 'Show in English');
+    document.getElementById('notice').hidden = !isSample;
+    var link = document.getElementById('suggestLink'), btn = document.getElementById('suggest');
+    if (CONFIG.SUGGEST_URL) { link.href = CONFIG.SUGGEST_URL; link.hidden = false; btn.hidden = true; }
+    else { link.hidden = true; btn.hidden = false; }
+  }
+
+  function ensureVisible(p) {
+    var box = document.getElementById('sheet');
+    if (box.hidden) return;
+    var size = map.getSize(), pt = map.latLngToContainerPoint([p.lat, p.lon]);
+    var limit = size.y - (box.offsetHeight + 30) - 8;
+    if (pt.y > limit) map.panBy([0, pt.y - limit], { animate: !reduce });
+    else if (pt.y < 48) map.panBy([0, pt.y - 48], { animate: !reduce });
+  }
+  function select(id, pan) {
+    sel = id;
+    renderAll();
+    if (!id) return;
+    if (pan) focusOn(byId(id)); else ensureVisible(byId(id));
+  }
+
+  /* ===== Events ===== */
+  document.getElementById('list').addEventListener('click', function (e) {
+    var c = e.target.closest('.card');
+    if (c) {
+      select(c.getAttribute('data-id'), true);
+      if (window.matchMedia('(max-width: 899px)').matches) {
+        document.querySelector('.mapcol').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      }
+      return;
+    }
+    if (e.target.closest('#clear')) {
+      filters = { open: false, smoke: false, outdoor: false, pram: false, change: false };
+      Array.prototype.forEach.call(document.querySelectorAll('[data-f]'), function (b) { b.setAttribute('aria-pressed', 'false'); });
+      renderAll();
+    }
+  });
+  document.getElementById('sheet').addEventListener('click', function (e) {
+    if (e.target.closest('#sheetClose')) select(null, false);
+  });
+  document.getElementById('filters').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-f]');
+    if (!b) return;
+    var k = b.getAttribute('data-f');
+    filters[k] = !filters[k];
+    b.setAttribute('aria-pressed', filters[k] ? 'true' : 'false');
+    if (sel && !isVisible(sel)) sel = null;
+    renderAll();
+  });
+  document.getElementById('areas').addEventListener('click', function (e) {
+    var b = e.target.closest('.area');
+    if (!b) return;
+    area = b.getAttribute('data-area');
+    renderAreas();
+    fitAll(area ? PLACES.filter(function (p) { return p.area === area; }) : PLACES);
+  });
+  document.getElementById('near').addEventListener('click', function () {
+    var b = document.getElementById('near');
+    if (near) {
+      near = false; b.setAttribute('aria-pressed', 'false');
+      if (meMarker) { map.removeLayer(meMarker); meMarker = null; }
+      renderAll();
+      return;
+    }
+    if (!navigator.geolocation) { setStatus(t('near_fail')); return; }
+    setStatus(t('near_busy'));
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      userPos = [pos.coords.latitude, pos.coords.longitude];
+      near = true; b.setAttribute('aria-pressed', 'true'); setStatus('');
+      if (meMarker) map.removeLayer(meMarker);
+      meMarker = L.circleMarker(userPos, { radius: 8, className: 'me', interactive: false }).addTo(map);
+      var v = visible();
+      var bounds = L.latLngBounds([userPos]);
+      v.slice(0, 3).forEach(function (p) { bounds.extend([p.lat, p.lon]); });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: !reduce });
+      renderAll();
+    }, function () {
+      near = false; b.setAttribute('aria-pressed', 'false'); setStatus(t('near_fail'));
+    }, { timeout: 10000, maximumAge: 60000 });
+  });
+  document.getElementById('lang').addEventListener('click', function () {
+    lang = lang === 'en' ? 'de' : 'en';
+    store('kb-lang', lang);
+    applyI18n(); renderAreas(); renderAll();
+  });
+  document.getElementById('suggest').addEventListener('click', function () {
+    document.getElementById('sugNote').hidden = false;
+  });
+  document.getElementById('palToggle').addEventListener('click', function () {
+    var open = document.getElementById('swatches').hidden;
+    document.getElementById('swatches').hidden = !open;
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  function setPalette(p) {
+    if (p === 'sign') document.documentElement.removeAttribute('data-palette');
+    else document.documentElement.setAttribute('data-palette', p);
+    Array.prototype.forEach.call(document.querySelectorAll('.sw'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-pal') === p ? 'true' : 'false'); });
+  }
+  document.getElementById('swatches').addEventListener('click', function (e) {
+    var b = e.target.closest('.sw');
+    if (!b) return;
+    var p = b.getAttribute('data-pal');
+    setPalette(p); store('kb-palette', p);
+  });
+  if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(document.getElementById('map'));
+
+  /* ===== Start ===== */
+  var savedPal = store('kb-palette');
+  if (savedPal === 'hopfen' || savedPal === 'schuss') setPalette(savedPal);
+
+  function start() {
+    PLACES.forEach(function (p) { p.hrs = parseHours(p.hours); });
+    buildMarkers();
+    applyI18n(); renderAreas();
+    sel = null;
+    renderAll();
+    fitAll();
+  }
+  start();
+
+  if (CONFIG.SHEET_CSV_URL) {
+    fetch(CONFIG.SHEET_CSV_URL, { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.text(); })
+      .then(function (txt) {
+        var list = rowsToPlaces(parseCSV(txt));
+        PLACES = list; isSample = false;
+        start();
+      })
+      .catch(function () { setStatus(t('load_fail')); });
+  }
+})();
+</script>
+</body>
+</html>
