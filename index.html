@@ -211,7 +211,8 @@ a { color: inherit; }
 .sw i { width: 22px; height: 22px; border-radius: 50%; display: block; border: 1px solid rgba(0, 0, 0, 0.15); }
 
 @media (max-width: 599px) {
-  .sheet .pills, .sheet .s-note, .sheet .s-hours, .sheet .s-ver { display: none; }
+  .sheet .pills, .sheet .s-hours, .sheet .s-ver { display: none; }
+  .sheet .s-note { margin-top: 4px; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .sheet { padding-block: 10px; }
 }
 @media (min-width: 900px) {
@@ -237,10 +238,10 @@ a { color: inherit; }
   <div class="filters" id="filters" role="group" data-i18n-aria="filters">
     <button type="button" class="chip" id="near" aria-pressed="false" data-i18n="near"></button>
     <button type="button" class="chip" data-f="open" aria-pressed="false" data-i18n="f_open"></button>
-    <button type="button" class="chip" data-f="smoke" aria-pressed="false" data-i18n="f_smoke"></button>
     <button type="button" class="chip" data-f="outdoor" aria-pressed="false" data-i18n="f_outdoor"></button>
-    <button type="button" class="chip" data-f="pram" aria-pressed="false" data-i18n="f_pram"></button>
-    <button type="button" class="chip" data-f="change" aria-pressed="false" data-i18n="f_change"></button>
+    <button type="button" class="chip" data-f="indoor" aria-pressed="false" data-i18n="f_indoor"></button>
+    <button type="button" class="chip" data-f="play" aria-pressed="false" data-i18n="f_play"></button>
+    <button type="button" class="chip" data-f="highchair" aria-pressed="false" data-i18n="f_highchair"></button>
   </div>
   <p class="status" id="status" aria-live="polite" hidden></p>
 
@@ -284,7 +285,7 @@ a { color: inherit; }
   /* ===== Settings you can change ===== */
   var CONFIG = {
     // Google Sheet > File > Share > Publish to web > CSV. Paste that link here to go live.
-    SHEET_CSV_URL: '',
+    SHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSphk2bif1FqEJlplqPSETnQeBYiyUCDEIAtDTiydorYioxLa--dVpVXOHvbnfP5Iq3hGretlpOpP4E/pub?gid=0&single=true&output=csv',
     // Link to your Google Form for suggestions. Leave empty to show a placeholder note.
     SUGGEST_URL: '',
     TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -302,18 +303,19 @@ a { color: inherit; }
       filters: 'Filters', areas: 'Neighbourhoods', map_label: 'Map of places',
       near: 'Near me', near_busy: 'Finding your location…',
       near_fail: 'Could not get your location. Check that location access is allowed for this site.',
-      f_open: 'Open now', f_smoke: 'Fully smoke-free', f_outdoor: 'Outdoor seating', f_pram: 'Pram space', f_change: 'Changing table',
+      f_open: 'Open now', f_outdoor: 'Outdoor seating', f_indoor: 'Indoor seating', f_play: 'Play area', f_highchair: 'High chairs',
       all_berlin: 'All Berlin',
-      smoke_free: 'Smoke-free', smoke_sep: 'Smoking room is separate', smoke_unk: 'Smoking not confirmed',
-      p_outdoor: 'Outdoor seating', p_pram: 'Pram space', p_change: 'Changing table',
-      p_food: 'Serves food', p_play: 'Play corner', p_highchair: 'High chairs',
-      open_until: 'Open now · until', closed_opens: 'Closed · opens', tomorrow: 'tomorrow', no_hours: 'Hours not added yet',
+      smoke_free: 'Smoke-free', smoke_day: 'Smoke-free by day', smoke_sep: 'Smoking room is separate', smoke_unk: 'Smoking not confirmed',
+      p_outdoor: 'Outdoor seating', p_indoor: 'Indoor seating', p_fee: 'Entry fee', p_pram: 'Pram space', p_change: 'Changing table',
+      p_food: 'Serves food', p_play: 'Play area', p_highchair: 'High chairs',
+      open_until: 'Open now · until', closed_opens: 'Closed · opens', tomorrow: 'tomorrow', no_hours: 'Opening hours unknown',
       hours: 'Hours', checked: 'Checked', not_checked: 'Not checked yet',
       place1: 'place', placesN: 'places', badge: 'Placeholder', directions: 'Directions',
       no_results: 'No places match these filters.', clear: 'Clear filters',
       sug_title: 'Know a place we are missing?', sug_btn: 'Suggest a place',
       sug_note: 'Preview only. The link to the suggestion form will go here.',
-      load_fail: 'Could not load the live list. Showing sample places instead.',
+      loading: 'Loading places…', retry: 'Try again', none_yet: 'No places yet. Check back soon.',
+      load_fail: 'Could not load the places. Check your connection and try again.',
       try_colours: 'Try colours', close: 'Close',
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     },
@@ -324,18 +326,19 @@ a { color: inherit; }
       filters: 'Filter', areas: 'Kieze', map_label: 'Karte der Orte',
       near: 'In meiner Nähe', near_busy: 'Standort wird gesucht…',
       near_fail: 'Standort nicht verfügbar. Prüft, ob der Standortzugriff für diese Seite erlaubt ist.',
-      f_open: 'Jetzt geöffnet', f_smoke: 'Komplett rauchfrei', f_outdoor: 'Draußen sitzen', f_pram: 'Platz für Kinderwagen', f_change: 'Wickeltisch',
+      f_open: 'Jetzt geöffnet', f_outdoor: 'Draußen sitzen', f_indoor: 'Drinnen sitzen', f_play: 'Spielbereich', f_highchair: 'Hochstühle',
       all_berlin: 'Ganz Berlin',
-      smoke_free: 'Rauchfrei', smoke_sep: 'Raucherraum getrennt', smoke_unk: 'Rauchen unbestätigt',
-      p_outdoor: 'Draußen sitzen', p_pram: 'Platz für Kinderwagen', p_change: 'Wickeltisch',
-      p_food: 'Essen', p_play: 'Spielecke', p_highchair: 'Hochstühle',
-      open_until: 'Jetzt geöffnet · bis', closed_opens: 'Geschlossen · öffnet', tomorrow: 'morgen', no_hours: 'Zeiten noch nicht eingetragen',
+      smoke_free: 'Rauchfrei', smoke_day: 'Tagsüber rauchfrei', smoke_sep: 'Raucherraum getrennt', smoke_unk: 'Rauchen unbestätigt',
+      p_outdoor: 'Draußen sitzen', p_indoor: 'Drinnen sitzen', p_fee: 'Eintritt', p_pram: 'Platz für Kinderwagen', p_change: 'Wickeltisch',
+      p_food: 'Essen', p_play: 'Spielbereich', p_highchair: 'Hochstühle',
+      open_until: 'Jetzt geöffnet · bis', closed_opens: 'Geschlossen · öffnet', tomorrow: 'morgen', no_hours: 'Öffnungszeiten unbekannt',
       hours: 'Zeiten', checked: 'Geprüft', not_checked: 'Noch nicht geprüft',
       place1: 'Ort', placesN: 'Orte', badge: 'Platzhalter', directions: 'Route',
       no_results: 'Keine Orte passen zu diesen Filtern.', clear: 'Filter zurücksetzen',
       sug_title: 'Kennt ihr einen Ort, der fehlt?', sug_btn: 'Ort vorschlagen',
       sug_note: 'Nur Vorschau. Hier kommt der Link zum Formular hin.',
-      load_fail: 'Die Live-Liste konnte nicht geladen werden. Es werden Beispielorte gezeigt.',
+      loading: 'Orte werden geladen…', retry: 'Nochmal versuchen', none_yet: 'Noch keine Orte. Schaut bald wieder vorbei.',
+      load_fail: 'Die Orte konnten nicht geladen werden. Prüft eure Verbindung und versucht es nochmal.',
       try_colours: 'Farben ausprobieren', close: 'Schließen',
       days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
     }
@@ -397,27 +400,61 @@ a { color: inherit; }
     if (!str) return null;
     var days = [[], [], [], [], [], [], []], any = false;
     String(str).split(';').forEach(function (seg) {
-      var m = seg.match(/^\s*([A-Za-zäöüÄÖÜ,\-\s]+?)\s*(\d{1,2})(?::(\d{2}))?\s*-\s*(\d{1,2})(?::(\d{2}))?\s*$/);
+      var m = seg.match(/^\s*([A-Za-zäöüÄÖÜ,\-\s]+?)\s*(\d{1,2})(?::(\d{2}))?\s*-\s*(?:(\d{1,2})(?::(\d{2}))?|(sunset|sonnenuntergang))\s*$/i);
       if (!m) return;
-      var s = +m[2] * 60 + (+m[3] || 0), e = +m[4] * 60 + (+m[5] || 0);
-      if (e <= s) e += 1440;
+      var s = +m[2] * 60 + (+m[3] || 0), e;
+      if (m[6]) e = SUN;
+      else { e = +m[4] * 60 + (+m[5] || 0); if (e <= s) e += 1440; }
       dayList(m[1]).forEach(function (d) { days[d].push([s, e]); any = true; });
     });
     days.forEach(function (a) { a.sort(function (x, y) { return x[0] - y[0]; }); });
     return any ? days : null;
   }
   function berlinNow() {
-    var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+    var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
     var o = {};
     parts.forEach(function (p) { o[p.type] = p.value; });
-    return { day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(o.weekday), min: parseInt(o.hour, 10) * 60 + parseInt(o.minute, 10) };
+    return {
+      day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(o.weekday), min: parseInt(o.hour, 10) * 60 + parseInt(o.minute, 10),
+      y: +o.year, m: +o.month, d: +o.day
+    };
+  }
+  /* Sunset in Berlin as minutes after local midnight (NOAA-style approximation, good to a few minutes). */
+  var SUN = -1;
+  function sunsetMin(y, mo, d) {
+    var rad = Math.PI / 180, lat = 52.52, lng = 13.405;
+    var N = Math.round((Date.UTC(y, mo - 1, d) - Date.UTC(y, 0, 0)) / 86400000);
+    var lh = lng / 15, tt = N + (18 - lh) / 24;
+    var M = 0.9856 * tt - 3.289;
+    var L = (M + 1.916 * Math.sin(M * rad) + 0.020 * Math.sin(2 * M * rad) + 282.634) % 360;
+    var RA = Math.atan(0.91764 * Math.tan(L * rad)) / rad;
+    RA = (RA + 360) % 360;
+    RA += Math.floor(L / 90) * 90 - Math.floor(RA / 90) * 90;
+    RA /= 15;
+    var sinD = 0.39782 * Math.sin(L * rad), cosD = Math.cos(Math.asin(sinD));
+    var cosH = (Math.cos(90.833 * rad) - sinD * Math.sin(lat * rad)) / (cosD * Math.cos(lat * rad));
+    if (cosH > 1 || cosH < -1) return null;
+    var H = Math.acos(cosH) / rad / 15;
+    var T = H + RA - 0.06571 * tt - 6.622;
+    var ut = (((T - lh) % 24) + 24) % 24;
+    var noon = new Date(Date.UTC(y, mo - 1, d, 12));
+    var hr = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', hour: '2-digit', hourCycle: 'h23' }).format(noon), 10);
+    return Math.round((ut + (hr - 12)) * 60);
+  }
+  function segEnd(seg, n) {
+    if (seg[1] !== SUN) return seg[1];
+    var e = sunsetMin(n.y, n.m, n.d);
+    return e !== null && e > seg[0] ? e : null;
   }
   function openState(p) {
     if (!p.hrs) return { k: 'none' };
-    var n = berlinNow(), today = p.hrs[n.day], yest = p.hrs[(n.day + 6) % 7], i;
-    for (i = 0; i < today.length; i++) if (n.min >= today[i][0] && n.min < today[i][1]) return { k: 'open', until: today[i][1] };
+    var n = berlinNow(), today = p.hrs[n.day], yest = p.hrs[(n.day + 6) % 7], i, e;
+    for (i = 0; i < today.length; i++) {
+      e = segEnd(today[i], n);
+      if (e !== null && n.min >= today[i][0] && n.min < e) return { k: 'open', until: e };
+    }
     for (i = 0; i < yest.length; i++) if (yest[i][1] > 1440 && n.min < yest[i][1] - 1440) return { k: 'open', until: yest[i][1] - 1440 };
-    for (i = 0; i < today.length; i++) if (today[i][0] > n.min) return { k: 'closed', when: 'today', t: today[i][0] };
+    for (i = 0; i < today.length; i++) if (today[i][0] > n.min && segEnd(today[i], n) !== null) return { k: 'closed', when: 'today', t: today[i][0] };
     for (var d = 1; d <= 7; d++) {
       var day = (n.day + d) % 7;
       if (p.hrs[day].length) return { k: 'closed', when: d === 1 ? 'tomorrow' : 'day', day: day, t: p.hrs[day][0][0] };
@@ -452,10 +489,13 @@ a { color: inherit; }
       if (hasStatus && !/^(approved|yes|ja|live|published)$/i.test(o.status)) return;
       var lat = parseFloat(String(o.lat).replace(',', '.')), lon = parseFloat(String(o.lon).replace(',', '.'));
       if (!o.name || isNaN(lat) || isNaN(lon)) return;
-      var sm = /sep|getrennt|raucherraum|smoking room/i.test(o.smoke) ? 'sep' : (/free|frei|no|nein/i.test(o.smoke) ? 'free' : 'unk');
+      var sm = /sep|getrennt|raucherraum|smoking room/i.test(o.smoke) ? 'sep'
+        : (/^\s*(free|frei|smoke-?free|rauchfrei)\s*$/i.test(o.smoke) ? 'free'
+        : (/^\s*(daytime|day|tags(ü|ue)ber|tagsüber)\s*$/i.test(o.smoke) ? 'day' : 'unk'));
       out.push({
         id: o.id || ('r' + idx), name: o.name, area: o.area || '', lat: lat, lon: lon, hours: o.hours, smoke: sm,
-        outdoor: truthy(o.outdoor), pram: truthy(o.pram), change: truthy(o.changing || o.change),
+        outdoor: truthy(o.outdoor), indoor: truthy(o.indoor), fee: truthy(o.entry_fee || o.fee),
+        pram: truthy(o.pram), change: truthy(o.changing || o.change),
         food: truthy(o.food), play: truthy(o.play), highchair: truthy(o.highchair),
         note_en: o.note_en || '', note_de: o.note_de || '', checked: o.checked || ''
       });
@@ -465,8 +505,11 @@ a { color: inherit; }
 
   /* ===== State ===== */
   var lang = store('kb-lang') === 'de' ? 'de' : 'en';
-  var PLACES = SAMPLE.slice(), isSample = true;
-  var filters = { open: false, smoke: false, outdoor: false, pram: false, change: false };
+  // With a live Sheet link set, sample places are never shown, not even briefly.
+  var live = !!CONFIG.SHEET_CSV_URL;
+  var PLACES = live ? [] : SAMPLE.slice(), isSample = !live, loadState = live ? 'loading' : 'ok';
+  function noFilters() { return { open: false, outdoor: false, indoor: false, play: false, highchair: false }; }
+  var filters = noFilters();
   var sel = null, near = false, userPos = null, area = '';
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -519,8 +562,8 @@ a { color: inherit; }
   }
   function visible() {
     var v = PLACES.filter(function (p) {
-      return (!filters.open || openState(p).k === 'open') && (!filters.smoke || p.smoke === 'free') &&
-        (!filters.outdoor || p.outdoor) && (!filters.pram || p.pram) && (!filters.change || p.change);
+      return (!filters.open || openState(p).k === 'open') && (!filters.outdoor || p.outdoor) &&
+        (!filters.indoor || p.indoor) && (!filters.play || p.play) && (!filters.highchair || p.highchair);
     });
     if (near && userPos) v.sort(function (a, b) { return dist(a) - dist(b); });
     return v;
@@ -536,22 +579,28 @@ a { color: inherit; }
     return { c: 'none', s: t('no_hours') };
   }
   function pillsFor(p, all) {
-    var h = '<span class="pill ' + (p.smoke === 'free' ? 'good' : 'warn') + '">' + t(p.smoke === 'free' ? 'smoke_free' : (p.smoke === 'sep' ? 'smoke_sep' : 'smoke_unk')) + '</span>';
+    var sk = { free: ['good', 'smoke_free'], day: ['good', 'smoke_day'], sep: ['warn', 'smoke_sep'], unk: ['warn', 'smoke_unk'] }[p.smoke];
+    var h = '<span class="pill ' + sk[0] + '">' + t(sk[1]) + '</span>';
     if (p.outdoor) h += '<span class="pill">' + t('p_outdoor') + '</span>';
-    if (p.pram) h += '<span class="pill">' + t('p_pram') + '</span>';
-    if (p.change) h += '<span class="pill">' + t('p_change') + '</span>';
+    if (p.indoor) h += '<span class="pill">' + t('p_indoor') + '</span>';
+    if (p.fee) h += '<span class="pill warn">' + t('p_fee') + '</span>';
     if (all) {
-      if (p.food) h += '<span class="pill">' + t('p_food') + '</span>';
       if (p.play) h += '<span class="pill">' + t('p_play') + '</span>';
       if (p.highchair) h += '<span class="pill">' + t('p_highchair') + '</span>';
+      if (p.food) h += '<span class="pill">' + t('p_food') + '</span>';
+      if (p.pram) h += '<span class="pill">' + t('p_pram') + '</span>';
+      if (p.change) h += '<span class="pill">' + t('p_change') + '</span>';
     }
     return h;
   }
   function checkedText(p) {
-    var m = String(p.checked || '').match(/^(\d{4})-(\d{2})/);
-    if (!m) return t('not_checked');
-    var d = new Date(+m[1], +m[2] - 1, 1);
-    return t('checked') + ' ' + d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short', year: 'numeric' });
+    var raw = String(p.checked || '').trim();
+    var m = raw.match(/^(\d{4})-(\d{1,2})/);
+    if (m) {
+      var d = new Date(+m[1], +m[2] - 1, 1);
+      return t('checked') + ' ' + d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short', year: 'numeric' });
+    }
+    return raw ? t('checked') + ' ' + raw : t('not_checked');
   }
   function dirUrl(p) {
     var apple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -575,6 +624,12 @@ a { color: inherit; }
   }
   function renderList() {
     var v = visible(), box = document.getElementById('list');
+    if (loadState === 'loading') { box.innerHTML = '<li class="empty"><p>' + esc(t('loading')) + '</p></li>'; return; }
+    if (loadState === 'fail') {
+      box.innerHTML = '<li class="empty"><p>' + esc(t('load_fail')) + '</p><button type="button" class="btn" id="retry">' + esc(t('retry')) + '</button></li>';
+      return;
+    }
+    if (!PLACES.length) { box.innerHTML = '<li class="empty"><p>' + esc(t('none_yet')) + '</p></li>'; return; }
     if (!v.length) {
       box.innerHTML = '<li class="empty"><p>' + esc(t('no_results')) + '</p><button type="button" class="btn" id="clear">' + esc(t('clear')) + '</button></li>';
       return;
@@ -605,7 +660,7 @@ a { color: inherit; }
   }
   function renderCount() {
     var n = visible().length;
-    document.getElementById('count').textContent = n + ' ' + (n === 1 ? t('place1') : t('placesN'));
+    document.getElementById('count').textContent = loadState !== 'ok' || !PLACES.length ? '' : n + ' ' + (n === 1 ? t('place1') : t('placesN'));
   }
   function renderAreas() {
     var seen = {}, names = [];
@@ -659,8 +714,9 @@ a { color: inherit; }
       }
       return;
     }
+    if (e.target.closest('#retry')) { load(); return; }
     if (e.target.closest('#clear')) {
-      filters = { open: false, smoke: false, outdoor: false, pram: false, change: false };
+      filters = noFilters();
       Array.prototype.forEach.call(document.querySelectorAll('[data-f]'), function (b) { b.setAttribute('aria-pressed', 'false'); });
       renderAll();
     }
@@ -746,18 +802,21 @@ a { color: inherit; }
     renderAll();
     fitAll();
   }
+  PLACES.forEach(function (p) { if (p.indoor === undefined) p.indoor = !p.outdoor; });
   start();
 
-  if (CONFIG.SHEET_CSV_URL) {
+  function load() {
+    loadState = 'loading';
+    renderAll();
     fetch(CONFIG.SHEET_CSV_URL, { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.text(); })
       .then(function (txt) {
-        var list = rowsToPlaces(parseCSV(txt));
-        PLACES = list; isSample = false;
+        PLACES = rowsToPlaces(parseCSV(txt)); isSample = false; loadState = 'ok';
         start();
       })
-      .catch(function () { setStatus(t('load_fail')); });
+      .catch(function () { loadState = 'fail'; renderAll(); });
   }
+  if (live) load();
 })();
 </script>
 </body>
